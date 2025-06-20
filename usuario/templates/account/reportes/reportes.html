@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block navbar %}
+{# Bloque vacío sobrescribe el contenido del navbar de base.html #}
+{% endblock navbar %}
+
+{% block title %}Reportes{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+        {# Tarjeta para 'Egresados por Carrera' #}
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <img src="{% static 'usuario/img/egresadosall.png' %}" class="card-img-top p-3" alt="egresados" style="height: 140px; object-fit: contain;">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Egresados</h5>
+                    <p class="card-text text-muted">Obtén el listado de egresados.</p>
+                    <a href="#" class="btn btn-primary mt-2" data-report-type="egresados">
+                        Ver Reporte
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {# Tarjeta para 'Examenes y sus Resultados' #}
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <img src="{% static 'usuario/img/examenes.png' %}" class="card-img-top p-3" alt="Examenes" style="height: 140px; object-fit: contain;">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Examenes</h5>
+                    <p class="card-text text-muted">Obten el listado de Examenes.</p>
+                    <a href="#" class="btn btn-primary mt-2" data-report-type="examenes">
+                        Ver Reporte
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {# Alumnos cursando por carrera y sus datos #}
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <img src="{% static 'usuario/img/cursando.png' %}" class="card-img-top p-3" alt="cursando" style="height: 140px; object-fit: contain;">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Cursando</h5>
+                    <p class="card-text text-muted">Obten el listado de Alumnos Cursando.</p>
+                    <a href="#" class="btn btn-primary mt-2" data-report-type="cursadas">
+                        Ver Reporte
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {# Promedio Historico#}
+
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <img src="{% static 'usuario/img/promediosf.png' %}" class="card-img-top p-3" alt="promedio_historico" style="height: 140px; object-fit: contain;">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Promedio Historico</h5>
+                    <p class="card-text text-muted">Obten el Promedio Historico de las Carreras.</p>
+                    <a href="#" class="btn btn-primary mt-2" data-report-type="promedio_historico">
+                        Ver Reporte
+                    </a>
+                </div>
+            </div>
+        </div>
+
+           {# Resultado de Cursada#}
+
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <img src="{% static 'usuario/img/resultadocursada.png' %}" class="card-img-top p-3" alt="resultado_cursada" style="height: 140px; object-fit: contain;">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Resultado de Cursadas</h5>
+                    <p class="card-text text-muted">Obten el Resultado de las Materias Cursadas.</p>
+                    <a href="#" class="btn btn-primary mt-2" data-report-type="resultado_cursada">
+                        Ver Reporte
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+

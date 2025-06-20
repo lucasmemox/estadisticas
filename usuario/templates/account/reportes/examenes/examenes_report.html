@@ -1,0 +1,155 @@
+{# account/reportes/examenes/examenes_report_filtro.html #}
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ report_title }}{% endblock %}
+
+{% block navbar %}
+{# Sobrescribe el navbar de base.html si no quieres que aparezca en esta vista #}
+{% endblock navbar %}
+
+{% block content %}
+<div class="container mt-3">
+    <h1 class="h2 mb-4">{{ report_title }}</h1>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header">
+            Filtros del Reporte
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                {% csrf_token %}
+                <div class="col-md-4">
+                    {{ form.anio_academico.label_tag }}
+                    {{ form.anio_academico }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.propuesta_ids.label_tag }}
+                    <div>
+                        {% for checkbox in form.propuesta_ids %}
+                            <div class="form-check form-check-inline">
+                                {{ checkbox.tag }}
+                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                                    {{ checkbox.choice_label }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> Aplicar Filtros
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {# Condición para mostrar los resultados o el mensaje de "seleccione filtros" #}
+    {% if report_executed %}
+        {# Mostrar información de paginación y botón de exportar solo si el reporte fue ejecutado #}
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+            <div>
+                <a href="{% url 'export_examenes_excel' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-success">
+                    <i class="fas fa-file-excel"></i> Exportar a Excel
+                </a>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary ms-2">
+                    Volver a Reportes
+                </a>
+            </div>
+            {% if examenes_page_obj.has_other_pages %}
+            <span class="text-muted">
+                Página {{ examenes_page_obj.number }} de {{ examenes_page_obj.paginator.num_pages }}
+            </span>
+            {% endif %}
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Acta</th>
+                        <th>Año</th>
+                        <th>Materia</th>
+                        <th>Código</th>
+                        <th>Inscriptos</th>
+                        <th>Aprobados</th>
+                        <th>Desaprobados</th>
+                        <th>Ausentes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for examen in examenes %}
+                    <tr>
+                        <td>{{ examen.acta }}</td>
+                        <td>{{ examen.anio_academico }}</td>
+                        <td>{{ examen.nombre_materia }}</td>
+                        <td>{{ examen.codigo }}</td>
+                        <td>{{ examen.inscriptos }}</td>
+                        <td>{{ examen.aprobados }}</td>
+                        <td>{{ examen.reprobados }}</td>
+                        <td>{{ examen.ausentes }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8">No se encontraron exámenes con los filtros seleccionados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Controles de Paginación Mejorados #}
+        {% if examenes_page_obj.has_other_pages %}
+        <nav aria-label="Paginación de exámenes">
+            <ul class="pagination justify-content-center">
+                {# Botón Anterior #}
+                {% if examenes_page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ examenes_page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Anterior</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Anterior</span>
+                    </li>
+                {% endif %}
+
+                {# Enlaces a un rango de páginas #}
+                {% for i in examenes_page_obj.paginator.page_range %}
+                    {% if i >= examenes_page_obj.number|add:-2 and i <= examenes_page_obj.number|add:2 %}
+                        {% if examenes_page_obj.number == i %}
+                            <li class="page-item active" aria-current="page">
+                                <span class="page-link">{{ i }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+
+                {# Botón Siguiente #}
+                {% if examenes_page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ examenes_page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Siguiente</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Siguiente</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info text-center" role="alert">
+            Por favor, seleccione un <strong>Año Académico</strong> y al menos un <strong>ID de Propuesta</strong> para ver el reporte de exámenes.
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{# Agrega cualquier JS adicional aquí si lo necesitas #}
+{% endblock %}

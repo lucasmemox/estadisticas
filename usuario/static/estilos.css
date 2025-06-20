@@ -1,0 +1,24 @@
+  /* Centra el texto en las cabeceras de la tabla */
+    .table th {
+        text-align: center;
+    }
+
+    /* Centra el texto en las celdas de datos de la tabla */
+    .table td {
+        text-align: center;
+    }
+
+    /*Aplicado en inicio.html*/
+    /* Para las tablas sin bordes en celdas */
+  .custom-no-border-table th,
+  .custom-no-border-table td {
+    border: none !important; /* Elimina todos los bordes de celdas */
+    padding-top: 0.25rem; /* Ajusta el relleno vertical si lo deseas */
+    padding-bottom: 0.25rem; /* Ajusta el relleno vertical si lo deseas */
+  }
+
+  .custom-no-border-table {
+    border: 1px solid #dee2e6; /* Borde alrededor de toda la tabla */
+    border-radius: 0.25rem; /* Bordes redondeados para la tabla */
+    margin-bottom: 1rem; /* Margen inferior */
+  }

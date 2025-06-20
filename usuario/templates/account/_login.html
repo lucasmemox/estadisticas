@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio de Sesion{% endblock %}
+
+{% block content %}
+
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            <strong>¡Error! Nombre de usuario o contraseña incorrectos</strong> {{ form.errors }}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <strong>¡Bienvenido!</strong> Ingrese su nombre de usuario y contraseña para continuar.
+        </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+            <input type="hidden"  name="next" value="{{ next }} "/>
+
+            <button type="submit">Iniciar Sesion</button>
+    </form>
+
+{% endblock %}

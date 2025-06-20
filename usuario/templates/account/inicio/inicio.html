@@ -1,0 +1,108 @@
+{% load l10n %}
+{% load custom_filters %}
+
+<div class="container-fluid mt-3">
+    <h1 class="mb-4 text-center">Alumnos Cursando</h1>
+
+    <div class="row">
+        {# Tarjeta para Grado #}
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    Alumnos de Grado Activos (Año: {{ grado_chart_data.year }})
+                </div>
+                <div class="card-body">
+                    {% if grado_chart_data.labels %}
+                        <div class="table-responsive">
+                            <table class="table custom-no-border-table">
+                                <thead>
+                                    <tr>
+                                        <th>Carrera</th>
+                                        <th class="text-end">Alumnos</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {# Iterar sobre los datos #}
+                                    {% for i in grado_chart_data.labels|length_range %}
+                                        <tr>
+                                            <td>{{ grado_chart_data.labels|index:i }}</td>
+                                            <td class="text-end">{{ grado_chart_data.data|index:i }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-center">No hay datos de Grado disponibles para {{ grado_chart_data.year }}.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# Tarjeta para Pre-Grado #}
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    Alumnos de Pre-Grado Activos (Año: {{ pregrado_chart_data.year }})
+                </div>
+                <div class="card-body">
+                    {% if pregrado_chart_data.labels %}
+                        <div class="table-responsive">
+                            <table class="table custom-no-border-table">
+                                <thead>
+                                    <tr>
+                                        <th>Carrera</th>
+                                        <th class="text-end">Alumnos</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for i in pregrado_chart_data.labels|length_range %}
+                                        <tr>
+                                            <td>{{ pregrado_chart_data.labels|index:i }}</td>
+                                            <td class="text-end">{{ pregrado_chart_data.data|index:i }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-center">No hay datos de Pre-Grado disponibles para {{ pregrado_chart_data.year }}.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# Tarjeta para Posgrado #}
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    Alumnos de Posgrado Activos (Año: {{ posgrado_chart_data.year }})
+                </div>
+                <div class="card-body">
+                    {% if posgrado_chart_data.labels %}
+                        <div class="table-responsive">
+                            <table class="table custom-no-border-table">
+                                <thead>
+                                    <tr>
+                                        <th>Carrera</th>
+                                        <th class="text-end">Alumnos</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for i in posgrado_chart_data.labels|length_range %}
+                                        <tr>
+                                            <td>{{ posgrado_chart_data.labels|index:i }}</td>
+                                            <td class="text-end">{{ posgrado_chart_data.data|index:i }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-center">No hay datos de Posgrado disponibles para {{ posgrado_chart_data.year }}.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
