@@ -2707,7 +2707,8 @@ def docentes_x_comision_report(request):
                 report_executed = True
 
             if dptos_ids_filter:
-                dptos_ids_filter = [int(d_id) for d_id in dptos_ids_filter if d_id]
+                dptos_ids_filter = ','.join(map(str, [int(p_id) for p_id in dptos_ids_filter]))
+
             else:
                 dptos_ids_filter = []
 
