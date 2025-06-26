@@ -69,6 +69,11 @@ urlpatterns = [
     # **FIN RESULTADO DE CURSADAS REPORTES**
     ######################################################################################################
 
+    # **NUEVA URL PARA RESULTADO DE CURSADAS**
+    path('reportes/docentes/', views.docentes_x_comision_report, name='docentes_x_comision_report'),
+    ######################################################################################################
+    # **FIN RESULTADO DE CURSADAS REPORTES**
+    ######################################################################################################
 
     ########################################################################
     # **ESTADISTICAS**

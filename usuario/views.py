@@ -2691,7 +2691,7 @@ def egresados_x_anio_view(request):
 ############################################################################
 
 @login_required
-def docentes_x_carrera_dpto_view(request):
+def docentes_x_comision_report(request):
     form = DocentesFilterForm(request.GET)
 
     docentes = []
