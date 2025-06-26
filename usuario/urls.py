@@ -72,6 +72,9 @@ urlpatterns = [
     # **NUEVA URL PARA DOCENTES POR COMISION**
     path('reportes/docentes/', views.docentes_x_comision_report, name='docentes_x_comision_report'),
 
+    #**NUEVA URL PARA EXPORTAR RESULTADO DE CURSADAS (URL separada)**
+    path('reportes/docentes/export/excel/', views.export_docentes_x_comision_excel, name='export_docentes_x_comision_excel'),
+
     ######################################################################################################
     # **FIN RDOCENTES POR COMISION**
     ######################################################################################################

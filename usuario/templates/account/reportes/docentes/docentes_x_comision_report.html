@@ -55,10 +55,10 @@
         {# Mostrar información de paginación y botón de exportar solo si el reporte fue ejecutado #}
         <div class="mb-3 d-flex justify-content-between align-items-center">
             <div>
-             <!--   <a href="{% url 'export_cursadas_excel' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-success">
+                <a href="{% url 'export_docentes_x_comision_excel' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-success">
                     <i class="fas fa-file-excel"></i> Exportar a Excel
                 </a>
-                -->
+
             </div>
             {% if docentes_page_obj.has_other_pages %}
             <span class="text-muted">

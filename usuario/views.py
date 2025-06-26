@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 import openpyxl
 from django.db import connection
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger # Importa Paginator
-from .forms import ExamenesFilterForm,EgresadosFilterForm,CursadasFilterForm,ResultadoCursaFilterForm,IngresantesFilterForm,DocentesFilterForm,EgresadosxAnioFilterForm
+from .forms import ExamenesFilterForm,EgresadosFilterForm,CursadasFilterForm,ResultadoCursaFilterForm,IngresantesFilterForm,DocentesFilterForm,EgresadosxAnioFilterForm,DocentesRerportFilterForm
 from itertools import groupby
 from operator import itemgetter
 from datetime import date, datetime # Importa ambos, date y datetime
@@ -2692,7 +2692,7 @@ def egresados_x_anio_view(request):
 
 @login_required
 def docentes_x_comision_report(request):
-    form = DocentesFilterForm(request.GET)
+    form = DocentesRerportFilterForm(request.GET)
 
     docentes = []
     docentes_page_obj = None
@@ -2808,3 +2808,109 @@ def docentes_x_comision_report(request):
     }
 
     return render(request, 'account/reportes/docentes/docentes_x_comision_report.html', context)
+
+
+#########################################################################
+# DOCENTES POR  DEPARTAMENTO EN EXCEL
+############################################################################
+
+def export_docentes_x_comision_excel(request):
+
+    form = DocentesRerportFilterForm(request.GET)
+
+    docentes = []
+    report_executed = False
+
+    if 'anio' in request.GET or 'propuesta_ids' in request.GET:
+        if form.is_valid():
+            anio_filter = form.cleaned_data.get('anio')
+            dptos_ids_filter = form.cleaned_data.get('dptos_ids')
+
+            if anio_filter and dptos_ids_filter:
+                report_executed = True
+
+            if dptos_ids_filter:
+                dptos_ids_filter = ','.join(map(str, [int(p_id) for p_id in dptos_ids_filter]))
+
+            else:
+                dptos_ids_filter = []
+
+            with connection.cursor() as cursor:
+                    sql_query = f"""
+                        select
+                        ra.nombre AS carrera,
+                        ra.codigo AS codigo_dpto,
+                        COUNT(DISTINCT dc.docente) AS total_docentes,
+                        e.nombre as nombre_materia,
+                        c.comision_nombre as comision_nombre,
+                        c.periodo_nombre as cursado,
+                        negocio_pers.get_docentes_de_una_comision(c.comision) as nombre_docentes
+                        FROM
+                            negocio.vw_comisiones AS c
+                        INNER JOIN
+                            negocio.sga_docentes_comision AS dc ON c.comision = dc.comision
+                        INNER JOIN
+                            negocio.sga_docentes AS d ON dc.docente = d.docente
+                        INNER JOIN
+                            negocio.mdp_personas AS p ON d.persona = p.persona
+                        INNER JOIN
+                            negocio.sga_elementos AS e ON c.elemento = e.elemento
+                        INNER JOIN
+                            negocio.sga_elementos_revision AS er ON e.elemento = er.elemento
+                        INNER JOIN
+                            negocio.sga_elementos_plan AS ep ON er.elemento_revision = ep.elemento_revision
+                        INNER JOIN
+                            negocio.sga_planes_versiones AS pv ON ep.plan_version = pv.plan_version
+                        INNER JOIN
+                            negocio.sga_planes AS pr ON pv.plan = pr.plan
+                        INNER JOIN
+                            negocio.sga_propuestas AS pro ON pr.propuesta = pro.propuesta
+                        INNER JOIN
+                            negocio.sga_elementos_ra AS era ON e.elemento = era.elemento
+                        INNER JOIN
+                            negocio.sga_responsables_academicas AS ra ON ra.responsable_academica = era.responsable_academica AND ra.responsable_academica_tipo = 2
+                        WHERE
+                            c.anio_academico = %s
+                            AND c.estado = 'A'
+                            AND ra.responsable_academica IN ({dptos_ids_filter})
+                        GROUP BY
+                            carrera,
+                            codigo_dpto,
+                            comision_nombre,
+                            c.periodo_nombre,
+                            c.comision,
+                            e.nombre,
+                            c.anio_academico,
+                            ra.responsable_academica
+                        ORDER BY
+                            nombre_materia,
+                            codigo_dpto asc
+                        """
+                    cursor.execute(sql_query, [anio_filter])
+
+                    columns = [col[0] for col in cursor.description]
+                    all_docentes_data = cursor.fetchall()
+
+                    # Crear un nuevo libro de Excel
+                    wb = openpyxl.Workbook()
+                    ws = wb.active
+                    ws.title = "Docentes por Comision"
+
+                    # Escribir los encabezados (columnas de la consulta SQL)
+                    ws.append(columns)
+
+                    # Escribir los datos
+                    for row in all_docentes_data:
+                        processed_row = []
+                        for cell in row:
+                            if isinstance(cell, (date, datetime)):
+                                processed_row.append(cell.strftime('%Y-%m-%d'))
+                            else:
+                                processed_row.append(cell)
+                        ws.append(processed_row)
+
+            # Configurar la respuesta HTTP para la descarga del archivo
+            response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = 'attachment; filename="reporte_docentes_x_comision.xlsx"'
+            wb.save(response) # Guarda el libro de trabajo en la respuesta HTTP
+            return response # No se retorna una tupla, solo el objeto HttpResponse
