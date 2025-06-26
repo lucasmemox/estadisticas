@@ -2587,7 +2587,7 @@ def export_rango_etario_excel(request):
 ############################################################################################
 
 @login_required
-def egresados_x_anio_view(request): 
+def egresados_x_anio_view(request):
 
     form = EgresadosxAnioFilterForm(request.GET)
     egresados = []
@@ -2683,3 +2683,127 @@ def egresados_x_anio_view(request):
     }
 
     return render(request, 'account/estadisticas/egresados/egresados_x_anio.html', context)
+
+
+
+#########################################################################
+# DOCENTES POR  DEPARTAMENTO EN REPORTES
+############################################################################
+
+@login_required
+def docentes_x_carrera_dpto_view(request):
+    form = DocentesFilterForm(request.GET)
+
+    docentes = []
+    docentes_page_obj = None
+    report_executed = False
+
+    if 'anio' in request.GET or 'propuesta_ids' in request.GET:
+        if form.is_valid():
+            anio_filter = form.cleaned_data.get('anio')
+            dptos_ids_filter = form.cleaned_data.get('dptos_ids')
+
+            if anio_filter and dptos_ids_filter:
+                report_executed = True
+
+            if dptos_ids_filter:
+                dptos_ids_filter = [int(d_id) for d_id in dptos_ids_filter if d_id]
+            else:
+                dptos_ids_filter = []
+
+            with connection.cursor() as cursor:
+                    sql_query = f"""
+                        select
+                        ra.nombre AS carrera,
+                        ra.codigo AS codigo_dpto,
+                        COUNT(DISTINCT dc.docente) AS total_docentes,
+                        e.nombre as nombre_materia,
+                        c.comision_nombre as comision_nombre,
+                        c.periodo_nombre as cursado,
+                        negocio_pers.get_docentes_de_una_comision(c.comision) as nombre_docentes
+                        FROM
+                            negocio.vw_comisiones AS c
+                        INNER JOIN
+                            negocio.sga_docentes_comision AS dc ON c.comision = dc.comision
+                        INNER JOIN
+                            negocio.sga_docentes AS d ON dc.docente = d.docente
+                        INNER JOIN
+                            negocio.mdp_personas AS p ON d.persona = p.persona
+                        INNER JOIN
+                            negocio.sga_elementos AS e ON c.elemento = e.elemento
+                        INNER JOIN
+                            negocio.sga_elementos_revision AS er ON e.elemento = er.elemento
+                        INNER JOIN
+                            negocio.sga_elementos_plan AS ep ON er.elemento_revision = ep.elemento_revision
+                        INNER JOIN
+                            negocio.sga_planes_versiones AS pv ON ep.plan_version = pv.plan_version
+                        INNER JOIN
+                            negocio.sga_planes AS pr ON pv.plan = pr.plan
+                        INNER JOIN
+                            negocio.sga_propuestas AS pro ON pr.propuesta = pro.propuesta
+                        INNER JOIN
+                            negocio.sga_elementos_ra AS era ON e.elemento = era.elemento
+                        INNER JOIN
+                            negocio.sga_responsables_academicas AS ra ON ra.responsable_academica = era.responsable_academica AND ra.responsable_academica_tipo = 2
+                        WHERE
+                            c.anio_academico = %s
+                            AND c.estado = 'A'
+                            AND ra.responsable_academica IN ({dptos_ids_filter})
+                        GROUP BY
+                            carrera,
+                            codigo_dpto,
+                            comision_nombre,
+                            c.periodo_nombre,
+                            c.comision,
+                            e.nombre,
+                            c.anio_academico,
+                            ra.responsable_academica
+                        ORDER BY
+                            nombre_materia,
+                            codigo_dpto asc
+                        """
+                    cursor.execute(sql_query, [anio_filter])
+
+                    columns = [col[0] for col in cursor.description]
+                    all_docentes_data = cursor.fetchall()
+
+                    docentes_list = []
+                    for row in all_docentes_data:
+                        row_dict = dict(zip(columns, row))
+                        docentes_list.append(row_dict)
+
+            # El paginador y el formato de datos deben ocurrir después de obtener todos los datos,
+            # pero pueden estar fuera del bloque del cursor ya que all_docentes_data ya está en memoria.
+            paginator = Paginator(docentes_list, 25)
+            page_number = request.GET.get('page')
+
+            try:
+                    docentes_page_obj = paginator.page(page_number)
+            except PageNotAnInteger:
+                    docentes_page_obj = paginator.page(1)
+            except EmptyPage:
+                    docentes_page_obj = paginator.page(paginator.num_pages)
+
+            # Poblar la lista 'docentes' directamente desde docentes_page_obj.
+            # Esto asegura que los datos estén correctamente estructurados para la plantilla
+            # y evita posibles problemas de re-iteración con el cursor.
+            for docente_dict in docentes_page_obj:
+                    docentes.append({
+                        'carrera': docente_dict['carrera'],
+                        'codigo_dpto': docente_dict['codigo_dpto'],
+                        'total_docentes': docente_dict['total_docentes'],
+                        'nombre_materia': docente_dict['nombre_materia'],
+                        'comision_nombre': docente_dict['comision_nombre'],
+                        'cursado': docente_dict['cursado'],
+                        'nombre_docentes': docente_dict['nombre_docentes'],
+                    })
+
+    context = {
+        'form': form,
+        'docentes': docentes,
+        'docentes_page_obj': docentes_page_obj,
+        'report_title': 'Reporte de Comisiones por Docente',
+        'report_executed': report_executed,
+    }
+
+    return render(request, 'account/reportes/docentes/docentes_x_comision_report.html', context)
