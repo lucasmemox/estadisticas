@@ -158,6 +158,28 @@ class DocentesFilterForm(forms.Form):
             widget=forms.CheckboxSelectMultiple
         )
 
+class DocentesRerportFilterForm(forms.Form):
+            anio = forms.ChoiceField(
+            label="Año",
+            choices=[('', '------')] + [(str(year), str(year)) for year in range(2025, 2014,-1)], # Añade opción vacía
+            required=False,
+         )
+
+            dptos_ids = forms.MultipleChoiceField(
+            label="Dptos",
+                choices=[
+                # No hay opción vacía para MultipleChoiceField, ya que no se selecciona nada por defecto
+                ('2', 'Ingenieria Civil'),
+                ('3', 'Ingenieria Electromecanica'),
+                ('6', 'Licenciatura en Organizacion Industrial'),
+                ('8', 'Ingenieria en Sistemas de Informacion'),
+                ('10', 'Materias Basicas'),
+                # Agrega más carreras según sea necesario
+                ],
+                required=False,
+            widget=forms.CheckboxSelectMultiple
+        )
+
 class EgresadosxAnioFilterForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs) # ¡IMPORTANTE: llamar al __init__ del padre primero!
