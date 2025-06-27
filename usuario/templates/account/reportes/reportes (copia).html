@@ -11,7 +11,15 @@
 {% block content %}
 <div class="container-fluid mt-3">
 
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4" id="contenedorTarjetas">
+    {# Filtro para las Tarjetas #}
+
+     <div class="row mb-4">
+        <div class="col-12">
+            <input type="text" id="filtroReportes" class="form-control" placeholder="Buscar reportes por título o descripción...">
+        </div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
         {# Tarjeta para 'Egresados por Carrera' #}
         <div class="col">
             <div class="card h-100 shadow-sm">
@@ -101,3 +109,5 @@
     </div>
 </div>
 {% endblock %}
+
+

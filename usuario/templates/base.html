@@ -50,60 +50,66 @@
     {% endblock %}
   </div>
 
-  {# Carga de JavaScript de Bootstrap #}
 <script>
-   function loadContent(url, title) {
-            fetch(url, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest' // Añade esta cabecera para que Django detecte la petición AJAX
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.text();
-            })
-            .then(html => {
-                // Limpia el contenido actual y lo reemplaza con el HTML cargado
-                dynamicContentDiv.innerHTML = html;
-                mainContentTitle.innerText = title;
+    let dynamicContentDiv;
+    let mainContentTitle;
 
-                // Después de inyectar el HTML, buscar y ejecutar cualquier script inyectado.
-                // Esta es la parte crucial para que los gráficos funcionen.
-                const scripts = dynamicContentDiv.querySelectorAll('script');
-                scripts.forEach(script => {
-                    const newScript = document.createElement('script');
-                    if (script.src) {
-                        newScript.src = script.src;
-                    } else {
-                        newScript.textContent = script.textContent;
-                    }
-                    // Eliminar el script viejo antes de añadir el nuevo para evitar duplicados
-                    if (script.parentNode) {
-                        script.parentNode.removeChild(script);
-                    }
-                    dynamicContentDiv.appendChild(newScript);
-                });
+    document.addEventListener('DOMContentLoaded', function() {
+        dynamicContentDiv = document.getElementById('dynamic-content');
+        mainContentTitle = document.getElementById('main-content-title');
 
+        document.getElementById('reportes-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            loadContent('/account/reportes/', 'Reportes UTN-FRCU');
+        });
 
-                // Después de cargar el contenido, si hay botones de reporte, inicialízalos.
-                // Esta función se necesita si el contenido inyectado incluye esos botones.
-                initializeReportCardClicks();
+        document.getElementById('estadisticas-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            loadContent('/account/estadisticas/', 'Estadísticas del Sistema');
+        });
 
-            })
-            .catch(error => {
-                console.error('Error al cargar el contenido:', error);
-                dynamicContentDiv.innerHTML = '<div class="alert alert-danger" role="alert">Error al cargar el contenido. Por favor, inténtalo de nuevo.</div>';
-            });
-        }
+        document.getElementById('dashboard-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            loadContent('/account/inicio/', 'Inicio');
+        });
+
+        loadContent('/account/inicio/', 'Inicio'); // Cargar el contenido de inicio por defecto
+    });
+
+    // Función global para cargar contenido dinámico
+    function loadContent(url, title) {
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.text();
+        })
+        .then(html => {
+            dynamicContentDiv.innerHTML = html;
+            mainContentTitle.innerText = title;
+
+            // Después de cargar el contenido, ejecuta cualquier script de inicialización
+            // definido en el bloque extra_js, o funciones globales si existen.
+            // Esto es crucial para que el filtro y los listeners se re-apliquen.
+            // Llamamos a una función genérica que manejará la inicialización post-carga
+            if (typeof initDynamicContent === 'function') {
+                initDynamicContent();
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar el contenido:', error);
+            dynamicContentDiv.innerHTML = '<div class="alert alert-danger" role="alert">Error al cargar el contenido. Por favor, inténtalo de nuevo.</div>';
+        });
+    }
 </script>
-  {# Aquí es donde se inyectará tu JavaScript adicional del dashboard.html #}
-
-        {% block extra_js %}
-        {% endblock %}
-
-
+  {# Aquí se inyectará tu JavaScript adicional del dashboard.html #}
+  {% block extra_js %}
+  {% endblock %}
 
 </body>
 </html>

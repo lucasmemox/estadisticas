@@ -62,10 +62,17 @@
                     </div>
                 </div>
 
+                {# Campo de búsqueda global - AHORA VA AQUÍ #}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <input type="text" id="filtroTarjetas" class="form-control" placeholder="Buscar tarjetas por título o descripción...">
+                    </div>
+                </div>
+
                 {# Aquí es donde se cargará el contenido dinámico #}
                 <div id="dynamic-content">
                     <p>Selecciona un elemento del menú de la izquierda para ver su contenido.</p>
-                    {# Este es el contenido por defecto del dashboard #}
+                    {# Este es el contenido por defecto del dashboard, que puede ser inicio.html #}
                 </div>
             </main>
         </div>
@@ -78,120 +85,101 @@
 
 {% block extra_js %}
 <script>
+    // Esta función se ejecuta CADA VEZ que el contenido dinámico se carga.
+    // Es el callback que se llama desde loadContent en base.html.
+    function initDynamicContent() {
+        console.log("Inicializando contenido dinámico...");
+
+        // **1. Lógica de Filtrado de Tarjetas:**
+        const filtroTarjetas = document.getElementById('filtroTarjetas');
+        // Usamos un event listener delegado en el input de búsqueda.
+        // El listener solo se adjunta una vez, en el dashboard.html.
+        // No necesitamos re-adjuntarlo en cada carga de contenido.
+
+        // **2. Inicialización de Clicks de Tarjetas (botones "Ver Reporte"):**
+        // Seleccionamos todos los botones dentro de #dynamic-content
+        const reportButtons = dynamicContentDiv.querySelectorAll('.btn[data-report-type]');
+
+        reportButtons.forEach(button => {
+            // Clonar y reemplazar para asegurar que no haya listeners duplicados
+            // y que el listener siempre sea el más reciente.
+            const oldButton = button;
+            const newButton = oldButton.cloneNode(true);
+            oldButton.parentNode.replaceChild(newButton, oldButton);
+
+            newButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                const reportType = this.dataset.reportType;
+                console.log("Botón de tarjeta clicado, tipo:", reportType);
+
+                // Tu lógica de redirección, que es independiente del filtro
+                if (reportType === 'promedio_historico') {
+                    window.location.href = '/account/reportes/promedio_historico/';
+                } else if (reportType === 'egresados') {
+                    window.location.href = '/account/reportes/egresados/';
+                } else if (reportType === 'examenes') {
+                    window.location.href = '/account/reportes/examenes/';
+                } else if (reportType === 'cursadas') {
+                    window.location.href = '/account/reportes/cursadas/';
+                } else if (reportType === 'docxcomision') {
+                    window.location.href = '/account/reportes/docentes';
+                } else if (reportType === 'ingresantes') {
+                    window.location.href = '/account/estadisticas/ingresantes/';
+                } else if (reportType === 'retenidos') {
+                    window.location.href = '/account/estadisticas/retenidos/';
+                } else if (reportType === 'etarios') {
+                    window.location.href = '/account/estadisticas/etarios/';
+                } else if (reportType === 'gradxanio') {
+                    window.location.href = '/account/estadisticas/egresados/';
+                } else if (reportType === 'docentes') {
+                    window.location.href = '/account/estadisticas/docentes/';
+                } else if (reportType === 'resultado_cursada') {
+                    window.location.href = '/account/reportes/resultado_cursada/';
+                } else {
+                    console.warn('Tipo de reporte no reconocido:', reportType);
+                }
+            });
+        });
+
+        // Limpiar el campo de búsqueda cada vez que se carga contenido nuevo
+        if (filtroTarjetas) {
+            filtroTarjetas.value = '';
+            // Asegúrate de que todas las tarjetas sean visibles al inicio
+            const allTarjetas = dynamicContentDiv.querySelectorAll('.col');
+            allTarjetas.forEach(col => {
+                col.style.display = 'block';
+            });
+        }
+    }
+
+    // El listener del campo de búsqueda se adjunta una sola vez en el DOM raíz
+    // que no cambia (el dashboard.html).
+    // Su lógica operará sobre los elementos que estén actualmente en #dynamic-content.
     document.addEventListener('DOMContentLoaded', function() {
-        const dynamicContentDiv = document.getElementById('dynamic-content');
-        const mainContentTitle = document.getElementById('main-content-title');
+        const filtroTarjetasInput = document.getElementById('filtroTarjetas');
 
-        function loadContent(url, title) {
-            fetch(url, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest' // Añade esta cabecera para que Django detecte la petición AJAX
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.text();
-            })
-            .then(html => {
-                // Limpia el contenido actual y lo reemplaza con el HTML cargado
-                dynamicContentDiv.innerHTML = html;
-                mainContentTitle.innerText = title;
+        if (filtroTarjetasInput) {
+            filtroTarjetasInput.addEventListener('keyup', function() {
+                const textoBusqueda = filtroTarjetasInput.value.toLowerCase();
+                // Busca las tarjetas dentro del contenedor dinámico
+                const tarjetas = dynamicContentDiv.querySelectorAll('.col');
 
-                // Después de inyectar el HTML, buscar y ejecutar cualquier script inyectado.
-                // Esta es la parte crucial para que los gráficos funcionen.
-                const scripts = dynamicContentDiv.querySelectorAll('script');
-                scripts.forEach(script => {
-                    const newScript = document.createElement('script');
-                    if (script.src) {
-                        newScript.src = script.src;
+                tarjetas.forEach(function(col) {
+                    const tituloElement = col.querySelector('.card-title');
+                    const descripcionElement = col.querySelector('.card-text');
+
+                    const titulo = tituloElement ? tituloElement.textContent.toLowerCase() : '';
+                    const descripcion = descripcionElement ? descripcionElement.textContent.toLowerCase() : '';
+
+                    if (titulo.includes(textoBusqueda) || descripcion.includes(textoBusqueda)) {
+                        col.style.display = 'block';
                     } else {
-                        newScript.textContent = script.textContent;
-                    }
-                    // Eliminar el script viejo antes de añadir el nuevo para evitar duplicados
-                    if (script.parentNode) {
-                        script.parentNode.removeChild(script);
-                    }
-                    dynamicContentDiv.appendChild(newScript);
-                });
-
-
-                // Después de cargar el contenido, si hay botones de reporte, inicialízalos.
-                // Esta función se necesita si el contenido inyectado incluye esos botones.
-                initializeReportCardClicks();
-
-            })
-            .catch(error => {
-                console.error('Error al cargar el contenido:', error);
-                dynamicContentDiv.innerHTML = '<div class="alert alert-danger" role="alert">Error al cargar el contenido. Por favor, inténtalo de nuevo.</div>';
-            });
-        }
-
-        function initializeReportCardClicks() {
-            // console.log("Inicializando clics de tarjetas de reportes."); // Para depuración
-            const reportButtons = dynamicContentDiv.querySelectorAll('.btn[data-report-type]');
-
-            // console.log("Botones de reporte encontrados:", reportButtons.length); // Para depuración
-
-            reportButtons.forEach(button => {
-                // Siempre elimina y re-adjunta el listener para evitar duplicados
-                const oldButton = button;
-                const newButton = oldButton.cloneNode(true);
-                oldButton.parentNode.replaceChild(newButton, oldButton);
-
-                newButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const reportType = this.dataset.reportType;
-                    // console.log("Botón de tarjeta clicado, tipo:", reportType);
-
-                    if (reportType === 'promedio_historico') {
-                        window.location.href = '/account/reportes/promedio_historico/';
-                    } else if (reportType === 'egresados') {
-                        window.location.href = '/account/reportes/egresados/';
-                    } else if (reportType === 'examenes') {
-                        window.location.href = '/account/reportes/examenes/';
-                    } else if (reportType === 'cursadas') {
-                        window.location.href = '/account/reportes/cursadas/';
-                    } else if (reportType === 'docxcomision') {
-                        window.location.href = '/account/reportes/docentes';
-                    } else if (reportType === 'ingresantes') {
-                        window.location.href = '/account/estadisticas/ingresantes/';
-                    } else if (reportType === 'retenidos') {
-                        window.location.href = '/account/estadisticas/retenidos/';
-                    } else if (reportType === 'etarios') {
-                        window.location.href = '/account/estadisticas/etarios/';
-                    } else if (reportType === 'gradxanio') {
-                        window.location.href = '/account/estadisticas/egresados/';
-                    } else if (reportType === 'docentes') {
-                        window.location.href = '/account/estadisticas/docentes/';
-                    } else if (reportType === 'resultado_cursada') {
-                        window.location.href = '/account/reportes/resultado_cursada/';
-                    } else {
-                        console.warn('Tipo de reporte no reconocido:', reportType);
+                        col.style.display = 'none';
                     }
                 });
             });
         }
-
-        document.getElementById('reportes-link').addEventListener('click', function(e) {
-            e.preventDefault();
-            loadContent('/account/reportes/', 'Reportes UTN-FRCU');
-        });
-
-        document.getElementById('estadisticas-link').addEventListener('click', function(e) {
-            e.preventDefault();
-            loadContent('/account/estadisticas/', 'Estadísticas del Sistema');
-        });
-
-        document.getElementById('dashboard-link').addEventListener('click', function(e) {
-            e.preventDefault();
-            loadContent('/account/inicio/', 'Inicio'); // Carga el contenido de inicio.html
-        });
-
-        // Opcional: Cargar el dashboard (inicio) por defecto al cargar la página
-        loadContent('/account/inicio/', 'Inicio');
-
     });
+
 </script>
 {% endblock %}
