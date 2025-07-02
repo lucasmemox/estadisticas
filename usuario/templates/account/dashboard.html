@@ -62,8 +62,8 @@
                     </div>
                 </div>
 
-                {# Campo de búsqueda global - AHORA VA AQUÍ #}
-                <div class="row mb-4">
+                {# Campo de búsqueda global - AHORA CON UN ID PARA SU ROW PARA FACILITAR OCULTARLO #}
+                <div class="row mb-4" id="filtroRow"> {# Añadimos un ID a esta fila #}
                     <div class="col-12">
                         <input type="text" id="filtroTarjetas" class="form-control" placeholder="Buscar tarjetas por título o descripción...">
                     </div>
@@ -90,11 +90,37 @@
     function initDynamicContent() {
         console.log("Inicializando contenido dinámico...");
 
-        // **1. Lógica de Filtrado de Tarjetas:**
+        const filtroRow = document.getElementById('filtroRow'); // Obtener la fila del filtro
         const filtroTarjetas = document.getElementById('filtroTarjetas');
-        // Usamos un event listener delegado en el input de búsqueda.
-        // El listener solo se adjunta una vez, en el dashboard.html.
-        // No necesitamos re-adjuntarlo en cada carga de contenido.
+
+        // Controlar la visibilidad del filtro
+        // Verificamos si el contenido actual (en dynamicContentDiv) contiene tarjetas.
+        // Una forma sencilla es buscar si hay elementos con clase 'card' o 'col' dentro.
+        // O más precisamente, podrías pasar un argumento a initDynamicContent desde loadContent
+        // para indicar el tipo de contenido cargado (ej. 'reportes', 'estadisticas', 'inicio').
+
+        // Para simplificar, asumiremos que si hay un #contenedorTarjetas, el filtro es útil.
+        // Tu templates reportes.html y estadisticas.html tienen #contenedorTarjetas,
+        // mientras que inicio.html no.
+
+        const hasCardsContainer = dynamicContentDiv.querySelector('#contenedorTarjetas');
+
+        if (filtroRow) {
+            if (hasCardsContainer) {
+                filtroRow.style.display = 'flex'; // Mostrar la fila del filtro (usa flex para Bootstrap grid)
+                if (filtroTarjetas) {
+                    filtroTarjetas.value = ''; // Limpiar el filtro al mostrarlo
+                    // Asegúrate de que todas las tarjetas sean visibles al inicio
+                    const allTarjetas = dynamicContentDiv.querySelectorAll('.col');
+                    allTarjetas.forEach(col => {
+                        col.style.display = 'block';
+                    });
+                }
+            } else {
+                filtroRow.style.display = 'none'; // Ocultar la fila del filtro
+            }
+        }
+
 
         // **2. Inicialización de Clicks de Tarjetas (botones "Ver Reporte"):**
         // Seleccionamos todos los botones dentro de #dynamic-content
@@ -102,7 +128,6 @@
 
         reportButtons.forEach(button => {
             // Clonar y reemplazar para asegurar que no haya listeners duplicados
-            // y que el listener siempre sea el más reciente.
             const oldButton = button;
             const newButton = oldButton.cloneNode(true);
             oldButton.parentNode.replaceChild(newButton, oldButton);
@@ -112,7 +137,7 @@
                 const reportType = this.dataset.reportType;
                 console.log("Botón de tarjeta clicado, tipo:", reportType);
 
-                // Tu lógica de redirección, que es independiente del filtro
+                // Tu lógica de redirección
                 if (reportType === 'promedio_historico') {
                     window.location.href = '/account/reportes/promedio_historico/';
                 } else if (reportType === 'egresados') {
@@ -140,29 +165,16 @@
                 }
             });
         });
-
-        // Limpiar el campo de búsqueda cada vez que se carga contenido nuevo
-        if (filtroTarjetas) {
-            filtroTarjetas.value = '';
-            // Asegúrate de que todas las tarjetas sean visibles al inicio
-            const allTarjetas = dynamicContentDiv.querySelectorAll('.col');
-            allTarjetas.forEach(col => {
-                col.style.display = 'block';
-            });
-        }
     }
 
     // El listener del campo de búsqueda se adjunta una sola vez en el DOM raíz
-    // que no cambia (el dashboard.html).
-    // Su lógica operará sobre los elementos que estén actualmente en #dynamic-content.
     document.addEventListener('DOMContentLoaded', function() {
         const filtroTarjetasInput = document.getElementById('filtroTarjetas');
 
         if (filtroTarjetasInput) {
             filtroTarjetasInput.addEventListener('keyup', function() {
                 const textoBusqueda = filtroTarjetasInput.value.toLowerCase();
-                // Busca las tarjetas dentro del contenedor dinámico
-                const tarjetas = dynamicContentDiv.querySelectorAll('.col');
+                const tarjetas = dynamicContentDiv.querySelectorAll('.col'); // Busca en el contenido dinámico
 
                 tarjetas.forEach(function(col) {
                     const tituloElement = col.querySelector('.card-title');
