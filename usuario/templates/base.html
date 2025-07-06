@@ -112,7 +112,8 @@
   {% endblock %}
 
 
-
+   {# BLOQUE FOOTER #}
+    {% block footer %}
     <footer class="footer mt-auto py-3 bg-primary text-white"> {# Usamos bg-primary y text-white para que coincida con el navbar #}
         <div class="container">
             <div class="row align-items-center"> {# align-items-center para centrar verticalmente el contenido de las columnas #}
@@ -134,6 +135,8 @@
             </div>
         </div>
     </footer>
+    {% endblock footer %}
+    {# FIN DEL BLOQUE FOOTER #}
 
 </body>
 </html>

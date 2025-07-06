@@ -98,6 +98,22 @@
             </div>
         </div>
 
+        {# Tarjeta para 'Alumnos extranjeros Cursando' #}
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <img src="{% static 'usuario/img/extranjeros.png' %}" class="card-img-top p-3" alt="extranjeros" style="height: 140px; object-fit: contain;">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Extranjeros Cursando</h5>
+                    <p class="card-text text-muted">Obtén los alumnos extranjeros y su detalle.</p>
+                    <a href="#" class="btn btn-primary mt-2" data-report-type="aluextranjeros">
+                        Ver Reporte
+                    </a>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 {% endblock %}
+{% block footer %}
+{% endblock footer %}
