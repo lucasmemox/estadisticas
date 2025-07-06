@@ -2914,3 +2914,109 @@ def export_docentes_x_comision_excel(request):
             response['Content-Disposition'] = 'attachment; filename="reporte_docentes_x_comision.xlsx"'
             wb.save(response) # Guarda el libro de trabajo en la respuesta HTTP
             return response # No se retorna una tupla, solo el objeto HttpResponse
+
+
+#########################################################################
+# EXTRANJEROS POR  AÑO DE CURSADA
+############################################################################
+
+@login_required
+def extranjeros_x_cursada_report(request):
+    form = DocentesRerportFilterForm(request.GET)
+
+    extranjeros = []
+    extranjeros_page_obj = None
+    report_executed = False
+
+    if 'anio' in request.GET or 'propuesta_ids' in request.GET:
+        if form.is_valid():
+            anio_filter = form.cleaned_data.get('anio')
+            propuesta_ids_filter = form.cleaned_data.get('propuesta_ids')
+
+            if anio_filter and propuesta_ids_filter:
+                report_executed = True
+
+            if propuesta_ids_filter:
+                propuesta_ids_filter = ','.join(map(str, [int(p_id) for p_id in propuesta_ids_filter]))
+
+            else:
+                propuesta_ids_filter = []
+
+            with connection.cursor() as cursor:
+                    sql_query = f"""
+                        select distinct pr.nombre as carrera, p.apellido as apellido, p.nombres as nombre, pa.nombre as pais,
+                            tv.descripcion as visa_descripcion, ext.otorgamiento_visa as visa_otorgada, ext.vencimiento_visa as visa_vence,
+                            tr.descripcion as residencia, ext.residencia_cupo as cupo_residencia, ext.otorgamiento_residencia as residencia_otorgada,
+                        ext.vencimiento_residencia  as residencia_vence
+                        from negocio.mdp_personas p
+                            left join negocio.mdp_personas_extranjeros ext on p.persona = ext.persona
+                            left join negocio.mdp_tipo_residencia tr on tr.tipo_residencia = ext.tipo_residencia
+                            left join negocio.mdp_tipo_visa tv on ext.tipo_visa = tv.tipo_visa
+                            INNER JOIN negocio.sga_alumnos sa ON p.persona = sa.persona
+                            INNER JOIN negocio.sga_propuestas pr ON sa.propuesta = pr.propuesta,
+                            negocio.mug_paises pa
+                        where p.persona = sa.persona
+                        and pr.propuesta in ({propuesta_ids_filter})
+                        and sa.calidad = 'A'
+                        and p.pais_origen = pa.pais
+                        and pa.pais <> 54
+                        AND EXISTS (
+                                SELECT 1
+                                FROM
+                                    negocio.vw_comisiones c
+                                INNER JOIN negocio.sga_insc_cursada ic ON c.comision = ic.comision
+                                WHERE
+                                    ic.alumno = sa.alumno
+                                    AND c.anio_academico = %s
+                                    AND ic.estado = 'A'
+                            )
+                        order by 1,2,3
+                        """
+                    cursor.execute(sql_query, [anio_filter])
+
+                    columns = [col[0] for col in cursor.description]
+                    all_extranjeros_data = cursor.fetchall()
+
+                    extranjeros_list = []
+                    for row in all_extranjeros_data:
+                        row_dict = dict(zip(columns, row))
+                        extranjeros_list.append(row_dict)
+
+            # El paginador y el formato de datos deben ocurrir después de obtener todos los datos,
+            # pero pueden estar fuera del bloque del cursor ya que all_docentes_data ya está en memoria.
+            paginator = Paginator(extranjeros_list, 25)
+            page_number = request.GET.get('page')
+
+            try:
+                    extranjeros_page_obj = paginator.page(page_number)
+            except PageNotAnInteger:
+                    extranjeros_page_obj = paginator.page(1)
+            except EmptyPage:
+                    extranjeros_page_obj = paginator.page(paginator.num_pages)
+
+            # Poblar la lista 'docentes' directamente desde docentes_page_obj.
+            for extranjero_dict in extranjeros_page_obj:
+                    extranjeros.append({
+                        'carrera': extranjero_dict['carrera'],
+                        'apellido': extranjero_dict['apellido'],
+                        'nombre': extranjero_dict['nombre'],
+                        'pais': extranjero_dict['pais'],
+                        'visa_descripcion': extranjero_dict['visa_descripcion'],
+                        'visa_otorgada': extranjero_dict['visa_otorgada'],
+                        'visa_vence': extranjero_dict['visa_vence'],
+                        'residencia': extranjero_dict['residencia'],
+                        'cupo_residencia': extranjero_dict['cupo_residencia'],
+                        'residencia_otorgada': extranjero_dict['residencia_otorgada'],
+                        'residencia_vence': extranjero_dict['residencia_vence'],
+
+                    })
+
+    context = {
+        'form': form,
+        'extranjeros': extranjeros,
+        'extranjeros_page_obj': extranjeros_page_obj,
+        'report_title': 'Reporte de Comisiones por Docente',
+        'report_executed': report_executed,
+    }
+
+    return render(request, 'account/reportes/extranjeros/extranjeros_report.html', context)

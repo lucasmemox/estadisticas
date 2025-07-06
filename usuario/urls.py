@@ -79,6 +79,10 @@ urlpatterns = [
     # **FIN RDOCENTES POR COMISION**
     ######################################################################################################
 
+
+    # **NUEVA URL PARA EXTRANJEROS CURSANDO**
+    path('reportes/extranjeros/', views.extranjeros_x_cursada_report, name='extranjeros_x_cursada_report'),
+
     ########################################################################
     # **ESTADISTICAS**
     #######################################################################
