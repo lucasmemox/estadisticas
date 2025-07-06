@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ report_title }}{% endblock %}
+
+{% block navbar %}
+{# Sobrescribe el navbar de base.html si no quieres que aparezca en esta vista #}
+{% endblock navbar %}
+
+{% block content %}
+<div class="container mt-3">
+    <h1 class="h2 mb-4">{{ report_title }}</h1>
+
+    <div class="mb-3">
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary ms-2">
+            Volver a Reportes
+        </a>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header">
+            Filtros del Reporte
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                {% csrf_token %}
+                <div class="col-md-4">
+                    {{ form.anio.label_tag }}
+                    {{ form.anio }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.propuesta_ids_filter.label_tag }}
+                    <div>
+                        {% for checkbox in form.propuesta_ids %}
+                            <div class="form-check form-check-inline">
+                                {{ checkbox.tag }}
+                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                                    {{ checkbox.choice_label }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> Aplicar Filtros
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {# Condición para mostrar los resultados o el mensaje de "seleccione filtros" #}
+    {% if report_executed %}
+        {# Mostrar información de paginación y botón de exportar solo si el reporte fue ejecutado #}
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+            <div>
+             <!--    <a href="{% url 'export_docentes_x_comision_excel' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-success">
+                    <i class="fas fa-file-excel"></i> Exportar a Excel
+                </a> -->
+                Exportar a Excel
+            </div>
+            {% if extranjeros_page_obj.has_other_pages %}
+            <span class="text-muted">
+                Página {{ extranjeros_page_obj.number }} de {{ extanjeros_page_obj.paginator.num_pages }}
+            </span>
+            {% endif %}
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Carrera</th>
+                        <th>Nombre</th>
+                        <th>Pais</th>
+                        <th>Visa</th>
+                        <th>Otorgada</th>
+                        <th>Vence</th>
+                        <th>Residencia</th>
+                        <th>Otorgada</th>
+                        <th>Vence</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for extranjeros in extranjeros %}
+                    <tr>
+                        <td>{{ extranjeros.carrera }}</td>
+                        <td>{{ extranjeros.apellido }} , {{ extranjeros.nombre }}</td>
+                        <td>{{ extranjeros.pais }}</td>
+                        <td>{{ extranjeros.visa_descripcion }}</td>
+                        <td>{{ extranjeros.visa_otorgada }}</td>
+                        <td>{{ extranjeros.visa_vence }}</td>
+                        <td>{{ extranjeros.residencia }}</td>
+                        <td>{{ extranjeros.residencia_otorgada }}</td>
+                        <td>{{ extranjeros.residencia_vence }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8">No se encontraron comisiones con los filtros seleccionados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Controles de Paginación Mejorados #}
+        {% if extranjeros_page_obj.has_other_pages %}
+        <nav aria-label="Paginación de Extranjeros">
+            <ul class="pagination justify-content-center">
+                {# Botón Anterior #}
+                {% if docentes_page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ extranjeros_page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Anterior</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Anterior</span>
+                    </li>
+                {% endif %}
+
+                {# Enlaces a un rango de páginas #}
+                {% for i in extranjeros_page_obj.paginator.page_range %}
+                    {% if i >= extranjeros_page_obj.number|add:-2 and i <= extranjeros_page_obj.number|add:2 %}
+                        {% if extranjeros_page_obj.number == i %}
+
+                            <li class="page-item active" aria-current="page">
+                                <span class="page-link">{{ i }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+
+                {# Botón Siguiente #}
+                {% if extranjeros_page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ extranjeros_page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Siguiente</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Siguiente</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info text-center" role="alert">
+            Por favor, seleccione un <strong>Año Académico</strong> y al menos una <strong>Carrera</strong> para ver el reporte de Extranjeros.
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{# Agrega cualquier JS adicional aquí si lo necesitas #}
+{% endblock %}

@@ -2922,7 +2922,7 @@ def export_docentes_x_comision_excel(request):
 
 @login_required
 def extranjeros_x_cursada_report(request):
-    form = DocentesRerportFilterForm(request.GET)
+    form = DocentesFilterForm(request.GET)
 
     extranjeros = []
     extranjeros_page_obj = None
@@ -3008,14 +3008,13 @@ def extranjeros_x_cursada_report(request):
                         'cupo_residencia': extranjero_dict['cupo_residencia'],
                         'residencia_otorgada': extranjero_dict['residencia_otorgada'],
                         'residencia_vence': extranjero_dict['residencia_vence'],
-
                     })
 
     context = {
         'form': form,
         'extranjeros': extranjeros,
         'extranjeros_page_obj': extranjeros_page_obj,
-        'report_title': 'Reporte de Comisiones por Docente',
+        'report_title': 'Reporte de Extranjeros Cursando',
         'report_executed': report_executed,
     }
 
