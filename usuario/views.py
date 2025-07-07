@@ -2924,11 +2924,13 @@ def export_docentes_x_comision_excel(request):
 def extranjeros_x_cursada_report(request):
     form = DocentesFilterForm(request.GET)
 
-    extranjeros = []
     extranjeros_page_obj = None
     report_executed = False
+    extranjeros_list = [] # inicializar esto aquí también para el caso de no filtros.
 
-    if 'anio' in request.GET or 'propuesta_ids' in request.GET:
+    # Es importante que el `if` de request.GET englobe TODO lo que recupera datos
+    # para evitar errores si no hay filtros aplicados todavía.
+    if 'anio' in request.GET and 'propuesta_ids' in request.GET:
         if form.is_valid():
             anio_filter = form.cleaned_data.get('anio')
             propuesta_ids_filter = form.cleaned_data.get('propuesta_ids')
@@ -2936,13 +2938,15 @@ def extranjeros_x_cursada_report(request):
             if anio_filter and propuesta_ids_filter:
                 report_executed = True
 
-            if propuesta_ids_filter:
-                propuesta_ids_filter = ','.join(map(str, [int(p_id) for p_id in propuesta_ids_filter]))
+                # Formatear propuesta_ids_filter para la consulta SQL
+                # Asegúrate de que propuesta_ids_filter sea una lista de IDs de enteros.
+                # Si viene del formulario como lista de cadenas, conviértelas.
+                if isinstance(propuesta_ids_filter, list):
+                    propuesta_ids_sql = ','.join(map(str, propuesta_ids_filter))
+                else: # Si es solo un valor (ej. si el form solo permite una propuesta)
+                    propuesta_ids_sql = str(propuesta_ids_filter)
 
-            else:
-                propuesta_ids_filter = []
-
-            with connection.cursor() as cursor:
+                with connection.cursor() as cursor:
                     sql_query = f"""
                         select distinct pr.nombre as carrera, p.apellido as apellido, p.nombres as nombre, pa.nombre as pais,
                             tv.descripcion as visa_descripcion, ext.otorgamiento_visa as visa_otorgada, ext.vencimiento_visa as visa_vence,
@@ -2956,7 +2960,7 @@ def extranjeros_x_cursada_report(request):
                             INNER JOIN negocio.sga_propuestas pr ON sa.propuesta = pr.propuesta,
                             negocio.mug_paises pa
                         where p.persona = sa.persona
-                        and pr.propuesta in ({propuesta_ids_filter})
+                        and pr.propuesta in ({propuesta_ids_sql}) -- ¡Usar propuesta_ids_sql aquí!
                         and sa.calidad = 'A'
                         and p.pais_origen = pa.pais
                         and pa.pais <> 54
@@ -2977,43 +2981,38 @@ def extranjeros_x_cursada_report(request):
                     columns = [col[0] for col in cursor.description]
                     all_extranjeros_data = cursor.fetchall()
 
-                    extranjeros_list = []
+                    # Aquí es donde se carga la lista completa para el paginador
                     for row in all_extranjeros_data:
                         row_dict = dict(zip(columns, row))
+
+                        if isinstance(row_dict.get('visa_vence'), datetime):
+                            row_dict['visa_vence'] = row_dict['visa_vence'].date()
+                        if isinstance(row_dict.get('residencia_vence'), datetime):
+                            row_dict['residencia_vence'] = row_dict['residencia_vence'].date()
                         extranjeros_list.append(row_dict)
+            else:
+                # Si los filtros son válidos pero no hay anio_filter o propuesta_ids_filter
+                # El reporte no se ejecuta y la lista queda vacía
+                pass # report_executed ya es False por defecto o no se setea a True
+        else:
+            # Si el formulario no es válido, report_executed sigue siendo False
+            # y extranjeros_list permanece vacía.
+            pass
 
-            # El paginador y el formato de datos deben ocurrir después de obtener todos los datos,
-            # pero pueden estar fuera del bloque del cursor ya que all_docentes_data ya está en memoria.
-            paginator = Paginator(extranjeros_list, 25)
-            page_number = request.GET.get('page')
+    # Se crea el paginador con la lista COMPLETA de datos (extranjeros_list).
+    paginator = Paginator(extranjeros_list, 25)
+    page_number = request.GET.get('page')
 
-            try:
-                    extranjeros_page_obj = paginator.page(page_number)
-            except PageNotAnInteger:
-                    extranjeros_page_obj = paginator.page(1)
-            except EmptyPage:
-                    extranjeros_page_obj = paginator.page(paginator.num_pages)
-
-            # Poblar la lista 'docentes' directamente desde docentes_page_obj.
-            for extranjero_dict in extranjeros_page_obj:
-                    extranjeros.append({
-                        'carrera': extranjero_dict['carrera'],
-                        'apellido': extranjero_dict['apellido'],
-                        'nombre': extranjero_dict['nombre'],
-                        'pais': extranjero_dict['pais'],
-                        'visa_descripcion': extranjero_dict['visa_descripcion'],
-                        'visa_otorgada': extranjero_dict['visa_otorgada'],
-                        'visa_vence': extranjero_dict['visa_vence'],
-                        'residencia': extranjero_dict['residencia'],
-                        'cupo_residencia': extranjero_dict['cupo_residencia'],
-                        'residencia_otorgada': extranjero_dict['residencia_otorgada'],
-                        'residencia_vence': extranjero_dict['residencia_vence'],
-                    })
+    try:
+            extranjeros_page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+            extranjeros_page_obj = paginator.page(1)
+    except EmptyPage:
+            extranjeros_page_obj = paginator.page(paginator.num_pages)
 
     context = {
         'form': form,
-        'extranjeros': extranjeros,
-        'extranjeros_page_obj': extranjeros_page_obj,
+        'extranjeros_page_obj': extranjeros_page_obj, # Pasa directamente extranjeros_page_obj para iterar en la plantilla
         'report_title': 'Reporte de Extranjeros Cursando',
         'report_executed': report_executed,
     }

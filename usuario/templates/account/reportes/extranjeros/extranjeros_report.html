@@ -61,7 +61,7 @@
             </div>
             {% if extranjeros_page_obj.has_other_pages %}
             <span class="text-muted">
-                Página {{ extranjeros_page_obj.number }} de {{ extanjeros_page_obj.paginator.num_pages }}
+                Página {{ extranjeros_page_obj.number }} de {{ extranjeros_page_obj.paginator.num_pages }}
             </span>
             {% endif %}
         </div>
@@ -82,17 +82,17 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for extranjeros in extranjeros %}
+                    {% for extranjero in extranjeros_page_obj %}
                     <tr>
-                        <td>{{ extranjeros.carrera }}</td>
-                        <td>{{ extranjeros.apellido }} , {{ extranjeros.nombre }}</td>
-                        <td>{{ extranjeros.pais }}</td>
-                        <td>{{ extranjeros.visa_descripcion }}</td>
-                        <td>{{ extranjeros.visa_otorgada }}</td>
-                        <td>{{ extranjeros.visa_vence }}</td>
-                        <td>{{ extranjeros.residencia }}</td>
-                        <td>{{ extranjeros.residencia_otorgada }}</td>
-                        <td>{{ extranjeros.residencia_vence }}</td>
+                        <td>{{ extranjero.carrera }}</td>
+                        <td>{{ extranjero.apellido }} , {{ extranjeros.nombre }}</td>
+                        <td>{{ extranjero.pais }}</td>
+                        <td>{{ extranjero.visa_descripcion }}</td>
+                        <td>{{ extranjero.visa_otorgada|date:"Y-m-d" }}</td>
+                        <td>{{ extranjero.visa_vence|date:"Y-m-d" }}</td>
+                        <td>{{ extranjero.residencia }}</td>
+                        <td>{{ extranjero.residencia_otorgada|date:"Y-m-d" }}</td>
+                        <td>{{ extranjero.residencia_vence|date:"Y-m-d" }}</td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -108,7 +108,7 @@
         <nav aria-label="Paginación de Extranjeros">
             <ul class="pagination justify-content-center">
                 {# Botón Anterior #}
-                {% if docentes_page_obj.has_previous %}
+                {% if extranjeros_page_obj.has_previous %}
                     <li class="page-item">
                         <a class="page-link" href="?page={{ extranjeros_page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Anterior</a>
                     </li>
