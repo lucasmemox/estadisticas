@@ -2960,7 +2960,7 @@ def extranjeros_x_cursada_report(request):
                             INNER JOIN negocio.sga_propuestas pr ON sa.propuesta = pr.propuesta,
                             negocio.mug_paises pa
                         where p.persona = sa.persona
-                        and pr.propuesta in ({propuesta_ids_sql}) -- ¡Usar propuesta_ids_sql aquí!
+                        and pr.propuesta in ({propuesta_ids_sql})
                         and sa.calidad = 'A'
                         and p.pais_origen = pa.pais
                         and pa.pais <> 54
